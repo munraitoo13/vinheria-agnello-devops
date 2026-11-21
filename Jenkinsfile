@@ -92,7 +92,7 @@ EOF
                 sh '''
                     echo "[DevSecOps] Executando verificacoes basicas de seguranca..."
 
-                    LEAKED_FILES=$(find . -maxdepth 4 \( -name ".env" -o -name "*.key" -o -name "*.pem" \) | wc -l)
+                    LEAKED_FILES=$(find . -maxdepth 4 -type f | grep -E '(/\.env$|\.key$|\.pem$)' | wc -l)
                     if [ "$LEAKED_FILES" -ne 0 ]; then
                         echo "ERRO: Arquivos sensiveis encontrados no workspace!"
                         exit 1
