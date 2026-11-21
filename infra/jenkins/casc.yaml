@@ -1,0 +1,35 @@
+jenkins:
+  systemMessage: "Vinheria Agnello — CI/CD & DevSecOps Lab (Fase 7)"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD:-vinheria2026}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: true
+
+security:
+  globalJobDslSecurityConfiguration:
+    useScriptSecurity: false
+
+jobs:
+  - script: >
+      pipelineJob('vinheria-agnello-deploy') {
+        displayName('Vinheria Agnello - Deploy Pipeline')
+        description('Pipeline CI/CD da Fase 7: checkout Git, validacao dos servicos, DevSecOps check e publicacao.')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/munraitoo13/vinheria-agnello-devops.git')
+                }
+                branch('*/main')
+              }
+            }
+            scriptPath('Jenkinsfile')
+          }
+        }
+      }

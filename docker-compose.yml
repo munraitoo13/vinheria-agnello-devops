@@ -1,0 +1,115 @@
+services:
+  dns-dhcp:
+    build: ./infra/dnsmasq
+    container_name: vinheria-dns-dhcp
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      vinheria-net:
+        ipv4_address: 172.28.0.2
+
+  production-service:
+    build: ./services/production-service
+    container_name: vinheria-production
+    restart: unless-stopped
+    depends_on:
+      - dns-dhcp
+      - tracking-service
+    dns:
+      - 172.28.0.2
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-vinheria-agnello-dev-jwt-secret-key-2026}
+      TRACKING_SERVICE_URL: http://tracking.vinheria.local:8082
+    ports:
+      - "8081:8081"
+    networks:
+      vinheria-net:
+        ipv4_address: 172.28.0.10
+
+  tracking-service:
+    build: ./services/tracking-service
+    container_name: vinheria-tracking
+    restart: unless-stopped
+    depends_on:
+      - dns-dhcp
+    dns:
+      - 172.28.0.2
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-vinheria-agnello-dev-jwt-secret-key-2026}
+    ports:
+      - "8082:8082"
+    networks:
+      vinheria-net:
+        ipv4_address: 172.28.0.20
+
+  gateway:
+    build: ./infra/gateway
+    container_name: vinheria-gateway
+    restart: unless-stopped
+    depends_on:
+      - dns-dhcp
+      - production-service
+      - tracking-service
+    dns:
+      - 172.28.0.2
+    ports:
+      - "8088:80"
+      - "8443:443"
+    volumes:
+      - ./publish:/var/publish/vinheria:ro
+    networks:
+      vinheria-net:
+        ipv4_address: 172.28.0.30
+
+  jenkins:
+    build: ./infra/jenkins
+    container_name: vinheria-jenkins
+    restart: unless-stopped
+    depends_on:
+      - dns-dhcp
+    dns:
+      - 172.28.0.2
+    environment:
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:-vinheria2026}
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - ./publish:/var/publish/vinheria
+    networks:
+      vinheria-net:
+        ipv4_address: 172.28.0.40
+
+  wireshark:
+    image: lscr.io/linuxserver/wireshark:latest
+    container_name: vinheria-wireshark
+    profiles:
+      - inspect
+    cap_add:
+      - NET_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: America/Sao_Paulo
+    ports:
+      - "3005:3000"
+    volumes:
+      - ./captures:/config/captures
+    networks:
+      - vinheria-net
+
+networks:
+  vinheria-net:
+    name: vinheria-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1
+
+volumes:
+  jenkins_home:

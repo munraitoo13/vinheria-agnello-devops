@@ -1,0 +1,24 @@
+# Build artifacts & dependencies
+*/target/
+target/
+*.jar
+*.war
+
+# Jenkins runtime & local publish output
+publish/releases/
+publish/current
+publish/*.json
+publish/*.html
+
+# Secrets, local env, generated TLS certificates & keys
+.env
+*.key
+*.crt
+*.pem
+
+# Network packet captures & academic PDF report
+captures/*.pcap
+captures/*.pcapng
+docs/*.pdf
+docs/build/
+docs/screenshots/*.png
