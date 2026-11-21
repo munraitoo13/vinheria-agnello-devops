@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     options {
-        timestamps()
         disableConcurrentBuilds()
     }
 
@@ -92,7 +91,7 @@ EOF
                 sh '''
                     echo "[DevSecOps] Executando verificacoes basicas de seguranca..."
 
-                    LEAKED_FILES=$(find . -maxdepth 4 -type f | grep -E '(/\.env$|\.key$|\.pem$)' | wc -l)
+                    LEAKED_FILES=$(find . -maxdepth 4 -type f | { grep -E "(/[.]env|[.]key|[.]pem)$" || true; } | wc -l)
                     if [ "$LEAKED_FILES" -ne 0 ]; then
                         echo "ERRO: Arquivos sensiveis encontrados no workspace!"
                         exit 1
